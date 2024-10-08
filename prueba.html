@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Venn Diagram with Predefined Arrays</title>
+    <meta http-equiv="content-type" content="text-html; charset=utf-8" />
+
+    <script type="text/javascript" src="../jsc/jscharting.js"></script>
+    <script type="text/javascript" src="../jsc/modules/types.js"></script>
+
+    <style>
+      /*CSS*/
+      #chartDiv {
+        width: 700px;
+        height: 340px;
+        margin: 20px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chartDiv"></div>
+
+    <script type="text/javascript">
+      // Valores predefinidos como arreglos numéricos
+      var setA = [1, 2, 3, 4, 5];
+      var setB = [2, 3, 6, 7];
+      var setC = [3, 8, 9, 10];
+
+      // Intersecciones
+      var intersectionAB = setA.filter(value => setB.includes(value));
+      var intersectionAC = setA.filter(value => setC.includes(value));
+      var intersectionBC = setB.filter(value => setC.includes(value));
+      var intersectionABC = setA.filter(value => setB.includes(value) && setC.includes(value));
+
+      // Graficar el diagrama de Venn
+      var chart = JSC.chart('chartDiv', {
+        type: 'venn',
+        palette: ['white'],
+        title: {
+          position: 'center',
+          label: { text: 'Diagrama de Venn con Arreglos Numéricos', style_fontSize: '20px' }
+        },
+        defaultSeries: {
+          mouseTracking_enabled: false,
+          shape_padding: 0.2
+        },
+        defaultPoint: {
+          opacity: 1,
+          outline: { color: 'black', width: 2 }
+        },
+        series: [
+          {
+            name: 'Venn Diagram',
+            points: [
+              { name: 'A', y: setA.length, label_text: 'A: [' + setA.join(', ') + ']' },
+              { name: 'B', y: setB.length, label_text: 'B: [' + setB.join(', ') + ']' },
+              { name: 'C', y: setC.length, label_text: 'C: [' + setC.join(', ') + ']' },
+              {
+                sets: ['A', 'B'],
+                y: intersectionAB.length,
+                hatch: {
+                  style: 'horizontal',
+                  color: 'black'
+                },
+                label_text: 'A ∩ B: [' + intersectionAB.join(', ') + ']'
+              },
+              {
+                sets: ['A', 'C'],
+                y: intersectionAC.length,
+                hatch: {
+                  style: 'horizontal',
+                  color: 'black'
+                },
+                label_text: 'A ∩ C: [' + intersectionAC.join(', ') + ']'
+              },
+              {
+                sets: ['B', 'C'],
+                y: intersectionBC.length,
+                hatch: {
+                  style: 'horizontal',
+                  color: 'black'
+                },
+                label_text: 'B ∩ C: [' + intersectionBC.join(', ') + ']'
+              },
+              {
+                sets: ['A', 'B', 'C'],
+                y: intersectionABC.length,
+                hatch: {
+                  style: 'horizontal',
+                  color: 'black'
+                },
+                label_text: 'A ∩ B ∩ C: [' + intersectionABC.join(', ') + ']'
+              }
+            ]
+          }
+        ],
+        toolbar_visible: false
+      });
+    </script>
+  </body>
+</html>
