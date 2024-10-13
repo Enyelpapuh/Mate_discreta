@@ -40,52 +40,184 @@ HighchartsExporting(Highcharts);
 HighchartsAccessibility(Highcharts);
 
 export default function Component() {
-  const [results, setResults] = useState({ ab: "", bc: "", ca: "" });
-  const [sets, setSets] = useState({ A: "", B: "", C: "" }); // Estado para los conjuntos
+  const [results, setResults] = useState({ ab: "", bc: "", ca: "", abc: "" });
+  const [resultadoFinal, setResultadoFinal] = useState([]);
+  const [sets, setSets] = useState({
+    universo: [],
+    A: [],
+    B: [],
+    C: [],
+    entrada: ""
+});
 
-  const [open, setOpen] = useState(false)
-  const [value, setValue] = useState("")
 
-  const [valueA, setValueA] = useState("")
-  const [valueB, setValueB] = useState("")
-  const [valueC, setValueC] = useState("")
+
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+
+  // Estados iniciales para cada conjunto
+  const [universo, setUniverso] = useState("");
+  const [conjuntoA, setConjuntoA] = useState("");
+  const [conjuntoB, setConjuntoB] = useState("");
+  const [conjuntoC, setConjuntoC] = useState("");
+  const [entrada, setEntrada] = useState("");
 
   const [resultAB, setResultAB] = useState([]);
   const [resultBC, setResultBC] = useState([]);
   const [resultCA, setResultCA] = useState([]);
   const [resultABC, setResultABC] = useState([]);
 
-// Función de unión de dos conjuntos con búsqueda de un valor
-const union = (set1, set2) => {
-  return [...new Set([...set1, ...set2])]; // Crea un nuevo conjunto combinando ambos y elimina duplicados
+  
+
+
+// Funciones para operaciones de conjuntos
+const union = (setA, setB) => {
+  // Asegurarse de que setA y setB son arreglos
+  if (!Array.isArray(setA) || !Array.isArray(setB)) {
+      console.error('Uno de los conjuntos no es un arreglo:', { setA, setB });
+      return []; // Retornar un arreglo vacío si uno de los conjuntos no es válido
+  }
+  
+  return Array.from(new Set([...setA, ...setB])); // Unión
+};
+
+const intersection = (set1, set2) => {
+  // Verificación de tipo
+  if (!Array.isArray(set1) || !Array.isArray(set2)) {
+      console.error('Uno de los conjuntos no es un arreglo:', { set1, set2 });
+      return []; // Retornar un arreglo vacío si uno de los conjuntos no es válido
+  }
+  return set1.filter(item => set2.includes(item)); // Intersección
+};
+
+const difference = (set1, set2) => {
+  // Verificación de tipo
+  if (!Array.isArray(set1) || !Array.isArray(set2)) {
+      console.error('Uno de los conjuntos no es un arreglo:', { set1, set2 });
+      return []; // Retornar un arreglo vacío si uno de los conjuntos no es válido
+  }
+  return set1.filter(item => !set2.includes(item)); // Diferencia
+};
+const symmetricDifference = (set1, set2) => {
+  const differenceA = difference(set1, set2); // A - B
+  const differenceB = difference(set2, set1); // B - A
+  return union(differenceA, differenceB); // (A - B) ∪ (B - A)
+};
+
+const cartesianProduct = (set1, set2) => {
+  const product = [];
+  for (let a of set1) {
+      for (let b of set2) {
+          product.push([a, b]); // Agregar el par ordenado [a, b]
+      }
+  }
+  return product;
+};
+
+  // Función para calcular el conjunto potencia de A
+  const handlePowerSet = () => {
+    const setA = sets.A.split(",").map(item => parseInt(item.trim())).filter(num => !isNaN(num));
+
+    const resultPowerSet = powerSet(setA); // Calcula el conjunto potencia
+    console.log("Conjunto potencia de A:", resultPowerSet);
+  };
+
+  // Función para calcular el complemento de un conjunto
+  const complement = (universalSet, setA) => {
+    return universalSet.filter(item => !setA.includes(item)); // Elementos en el conjunto universal que no están en A
+  };
+
+  const evaluateExpression = (expression) => {
+    const parts = expression.match(/(\([^\)]+\)|[^\s()]+)/g); // Captura los conjuntos y paréntesis
+    console.log('Partes capturadas:', parts); // Muestra el arreglo de partes
+    let results = [];
+
+    for (let i = 0; i < parts.length; i++) {
+        let part = parts[i].trim();
+        
+        // Manejar expresiones dentro de paréntesis
+        if (part.startsWith('(') && part.endsWith(')')) {
+            const innerExpression = part.slice(1, -1); // Elimina los paréntesis
+            results.push(evaluateExpression(innerExpression)); // Evaluar expresión interna
+        } else if (part === '∪' || part === '∩' || part === '-' || part === 'Δ' || part === '×') {
+            // Si es un operador, lo ignoramos aquí y lo manejamos más adelante
+            continue;
+        } else {
+            // Aquí verificamos si el conjunto está definido
+            if (sets[part] === undefined) {
+                console.error(`El conjunto ${part} no está definido.`);
+                continue; // Salir si el conjunto no está definido
+            }
+            results.push(sets[part]); // Añadir el conjunto
+        }
+    }
+
+    // Realizar operaciones
+    return evaluateInnerOperations(results, parts);
+};
+
+const evaluateInnerOperations = (results, parts) => {
+    let finalResult = results[0]; // Inicia con el primer conjunto
+
+    for (let i = 1; i < parts.length; i++) {
+        const operator = parts[i].trim(); // Obtener el operador actual
+        const rightSet = results[i]; // El siguiente conjunto
+
+        if (operator === '∪') {
+            finalResult = union(finalResult, rightSet);
+        } else if (operator === '∩') {
+            finalResult = intersection(finalResult, rightSet);
+        } else if (operator === '-') {
+            finalResult = difference(finalResult, rightSet);
+        } else if (operator === 'Δ') { // Diferencia simétrica
+          finalResult = symmetricDifference(finalResult, rightSet);
+      } else if (operator === '×') { // Producto cartesiano
+          finalResult = cartesianProduct(finalResult, rightSet);
+      }
+    }
+
+    return finalResult; // Retornar el resultado final
+};
+  // Función para procesar un conjunto dado
+  const processSet = (setString) => {
+    return setString.split(",").map(item => item.trim()); // Separa por comas y elimina espacios en blanco
 };
 
 const handleCalculate = () => {
-  const setA = sets.A.split(",").map(item => parseInt(item.trim())).filter(num => !isNaN(num)); // Convierte a enteros
-  const setB = sets.B.split(",").map(item => parseInt(item.trim())).filter(num => !isNaN(num)); // Convierte a enteros
-  const setC = sets.C.split(",").map(item => parseInt(item.trim())).filter(num => !isNaN(num)); // Convierte a enteros
+  const processedUniverso = processSet(universo);
+  const processedA = processSet(conjuntoA);
+  const processedB = processSet(conjuntoB);
+  const processedC = processSet(conjuntoC);
 
-  // Operaciones de unión sin búsqueda de valor
-  const resultAB = union(setA, setB).sort((a, b) => a - b);  // Unión de A y B
-  const resultBC = union(setB, setC).sort((a, b) => a - b);  // Unión de B y C
-  const resultCA = union(setC, setA).sort((a, b) => a - b);  // Unión de C y A
-  const resultABC = union(resultAB, setC).sort((a, b) => a - b); // Unión de los tres conjuntos (A, B, C)
-
-  // Mostrar resultados en la consola
-  console.log("Unión de A y B:", resultAB);
-  console.log("Unión de B y C:", resultBC);
-  console.log("Unión de C y A:", resultCA);
-  console.log("Unión de A, B y C:", resultABC);
-
-  setResults({
-    ab: resultAB.join(", "), // Convierte el array a una cadena
-    bc: resultBC.join(", "), // Convierte el array a una cadena
-    ca: resultCA.join(", ")   // Convierte el array a una cadena
+  setSets({
+      universo: processedUniverso,
+      A: processedA,
+      B: processedB,
+      C: processedC,
+      entrada: entrada
   });
+
+  console.log("Valores capturados:");
+  console.log("Universo:", processedUniverso);
+  console.log("Conjunto A:", processedA);
+  console.log("Conjunto B:", processedB);
+  console.log("Conjunto C:", processedC);
+  console.log("Entrada:", entrada);
+
+  // Llama a la función para evaluar la expresión de entrada
+  if (entrada) {
+    const resultado = evaluateExpression(entrada);
+      console.log(`Resultado: ${JSON.stringify(resultado)}`);
+  } else {
+      console.error("Entrada no válida.");
+  }
 };
 
+  
 
   useEffect(() => {
+
+    
     Highcharts.chart('container', {
       chart: {
         type: 'venn'
@@ -98,7 +230,7 @@ const handleCalculate = () => {
         data: [{
           sets: ['A'],
           value: 3,
-          name: '1, 2, 5, 6'
+          name: '1, 2, 3, 4, 5, 6'
         }, {
           sets: ['B'],
           value: 3,
@@ -131,7 +263,7 @@ const handleCalculate = () => {
   return (
     <>
       <div className="text-center w-full ">
-      <Label className="  text-2xl" htmlFor="conjuntoA">Laboratorio 3 operadores de conjunto Y Diagrama de venn</Label>
+        <Label className="  text-2xl" htmlFor="conjuntoA">Laboratorio 3 operadores de conjunto Y Diagrama de venn</Label>
       </div>
       <div className="flex flex-col md:flex-row gap-6 p-6 bg-blue-50 min-h-screen">
         <Card className="w-full md:w-1/3">
@@ -139,95 +271,71 @@ const handleCalculate = () => {
             <CardTitle>Ingresar Datos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="conjuntoA">Conjunto A</Label>
-              <Input
-                id="conjuntoA"
-                placeholder="1, 2, 3, 4, 5, 6"
-                value={sets.A}
-                onChange={(e) => setSets({ ...sets, A: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="conjuntoB">Conjunto B</Label>
-              <Input
-                id="conjuntoB"
-                placeholder="2, 3, 4, 5"
-                value={sets.B}
-                onChange={(e) => setSets({ ...sets, B: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="conjuntoC">Conjunto C</Label>
-              <Input
-                id="conjuntoC"
-                placeholder="3, 5, 6, 7"
-                value={sets.C}
-                onChange={(e) => setSets({ ...sets, C: e.target.value })}
-              />
-            </div>
-            <div className="flex items-center space-x-4">
-              <Label>Determinar:</Label>
-              <div className="flex items-center space-x-2">
+              {/* Input para el conjunto universo */}
+      <div>
+        <label>Conjunto Universo: </label>
+        <input
+          type="text"
+          value={universo}
+          onChange={(e) => setUniverso(e.target.value)}
+          placeholder="Ej: 1, 2, 3"
+        />
+      </div>
 
-                <Label htmlFor="checkA">A</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="space-y-2">
-                  <Select onValueChange={setValueA} value={valueA}>
-                    <SelectTrigger className="w-15">
-                      <SelectValue placeholder="" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Label htmlFor="checkB">B</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="space-y-2">
-                  <Select onValueChange={setValueB} value={valueB}>
-                    <SelectTrigger className="w-15">
-                      <SelectValue placeholder="" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Label htmlFor="checkC">C</Label>
-              </div>
-            </div>
-            <Button onClick={handleCalculate}>Graficar los resultados</Button>
+      {/* Input para el conjunto A */}
+      <div>
+        <label>Conjunto A: </label>
+        <input
+          type="text"
+          value={conjuntoA}
+          onChange={(e) => setConjuntoA(e.target.value)}
+          placeholder="Ej: 2, 3, 4"
+        />
+      </div>
+
+      {/* Input para el conjunto B */}
+      <div>
+        <label>Conjunto B: </label>
+        <input
+          type="text"
+          value={conjuntoB}
+          onChange={(e) => setConjuntoB(e.target.value)}
+          placeholder="Ej: 4, 5, 6"
+        />
+      </div>
+
+      {/* Input para el conjunto C */}
+      <div>
+        <label>Conjunto C: </label>
+        <input
+          type="text"
+          value={conjuntoC}
+          onChange={(e) => setConjuntoC(e.target.value)}
+          placeholder="Ej: 6, 7, 8"
+        />
+      </div>
+
+      {/* Input para la expresión de entrada */}
+      <div>
+        <label>Entrada: </label>
+        <input
+          type="text"
+          value={entrada}
+          onChange={(e) => setEntrada(e.target.value)}
+          placeholder="Expresión para evaluar"
+        />
+      </div>
+
+      {/* Botón para calcular */}
+      <button onClick={handleCalculate}>Calcular</button>
+
+            {/*----************************************************************------------------- Resultados */}
             <div className="space-y-2">
               <Label>Resultados</Label>
               <Input value={results.ab} readOnly placeholder="a b" />
               <Input value={results.bc} readOnly placeholder="b c" />
               <Input value={results.ca} readOnly placeholder="c a" />
-            </div>
-            <div className="space-y-2">
-              <Label>Conjunto B</Label>
-              <Select onValueChange={setValueC} value={valueC}>
-                <SelectTrigger className="w-15">
-                  <SelectValue placeholder="Operador" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input value={results.abc} readOnly placeholder="a b c" />
             </div>
           </CardContent>
         </Card>
