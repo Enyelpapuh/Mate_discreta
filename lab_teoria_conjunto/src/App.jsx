@@ -43,12 +43,12 @@ export default function Component() {
   const [results, setResults] = useState({ ab: "", bc: "", ca: "", abc: "" });
   const [resultadoFinal, setResultadoFinal] = useState([]);
   const [sets, setSets] = useState({
-    universo: [],
-    A: [],
-    B: [],
-    C: [],
-    entrada: ""
-  });
+    universo: [],  // Conjunto universo, debería contener todos los elementos
+    A: [],         // Conjunto A
+    B: [],         // Conjunto B
+    C: [],         // Conjunto C
+    entrada: ""    // Expresión de entrada
+});
 
 
 
@@ -114,20 +114,27 @@ export default function Component() {
     return product;
   };
 // Función de complemento que maneja cualquier subconjunto
-const complement = (setUniverso, subset) => {
-  if (!Array.isArray(setUniverso) || !Array.isArray(subset)) {
-    console.error("Ambos argumentos deben ser arreglos.");
-    return [];
-  }
+const complement = (universo, conjunto) => {
+  // Convierte ambos conjuntos a sets para facilitar la diferencia
+  const universoSet = new Set(universo);
+  const conjuntoSet = new Set(conjunto);
 
-  // Filtrar los elementos que no están en el subconjunto
-  const result = universalSet.filter(element => !subset.includes(element));
+  // Calcula el complemento
+  const result = [...universoSet].filter(item => !conjuntoSet.has(item));
+  return result; // Retorna el complemento
+};
 
-  console.log("Conjunto universal:", setUniverso);
-  console.log("Subconjunto:", subset);
-  console.log("Complemento:", result);
+// Función de prueba
+const testComplementFunction = () => {
+  // Define los valores de prueba
+  const universo = ['1', '2', '3', '4', '5']; // Arreglo de strings que representa el conjunto universo
+  const conjuntoA = ['1', '3']; // Arreglo de strings que representa el subconjunto
+
+  // Llama a la función de complemento con los valores de prueba
+  const resultadoComplemento = complement(universo, conjuntoA);
   
-  return result; // Retornar el complemento
+  // Imprime el resultado
+  console.log(`Complemento de A:`, resultadoComplemento); // Debería imprimir: Complemento de A: ['2', '4', '5']
 };
   // Función para calcular el conjunto potencia (todos los subconjuntos de un conjunto)
   const powerSet = (set) => {
@@ -152,52 +159,61 @@ const complement = (setUniverso, subset) => {
 
 
 const evaluateExpression = (expression) => {
-    const parts = expression.match(/(\([^\)]+\)|[^\s()]+)/g); // Captura los conjuntos y paréntesis
+  // Captura las partes de la expresión (conjuntos y operadores)
+  const parts = expression.match(/(\([^\)]+\)|[^\s()]+)/g); // Captura los conjuntos y paréntesis
     console.log('Partes capturadas:', parts); // Muestra el arreglo de partes
-    let results = [];
-    let operators = []; // Lista para almacenar operadores
+  
+  // Almacena las partes desglosadas en un arreglo de resultados
+  let results = [];
+  let operators = []; // Lista para almacenar operadores
 
-    for (let i = 0; i < parts.length; i++) {
-        let part = parts[i].trim();
+  for (let i = 0; i < parts.length; i++) {
+      let part = parts[i].trim();
 
-        // Manejar expresiones dentro de paréntesis
-        if (part.startsWith('(') && part.endsWith(')')) {
-            const innerExpression = part.slice(1, -1); // Elimina los paréntesis
-            results.push(evaluateExpression(innerExpression)); // Evaluar expresión interna
-        } else if (part === '∪' || part === '∩' || part === '-' || part === 'Δ' || part === '×' || part === '^' || part.endsWith('^c')) {
-            // Si es un operador, lo almacenamos para manejar más adelante
-            operators.push(part);
-            continue;
-        } else if (part.endsWith('^c')) {
+      // Manejar expresiones dentro de paréntesis
+      if (part.startsWith('(') && part.endsWith(')')) {
+          const innerExpression = part.slice(1, -1); // Elimina los paréntesis
+          results.push(evaluateExpression(innerExpression)); // Evaluar expresión interna
+      } else if (part === '∪' || part === '∩' || part === '-' || part === 'Δ' || part === '×' || part === '^c') {
+          // Si es un operador, lo almacenamos para manejar más adelante
+          operators.push(part);
+          continue;
+      } else if (part.includes('^c')) {
           // Detectar el complemento A^c
-          const setName = part.slice(0, -2); // Extrae el nombre del conjunto (antes del ^c)
+          const setName = part.split('^c')[0]; // Separa el nombre del conjunto del operador ^c
+          if (sets[setName] !== undefined && sets.universo.length > 0) {
+              const result = complement(sets.universo, sets[setName]); // Calcula el complemento del conjunto
+              results.push(result);
+              console.log(`Complemento de ${setName}:`, result); // Imprimir el resultado del complemento
+          } else {
+              console.error(`El conjunto ${setName} no está definido o el universo está vacío.`);
+          }
+      } else if (part.endsWith('^')) {
+          // Detectar el conjunto potencia A^
+          const setName = part.slice(0, -1); // Extrae el nombre del conjunto (antes del ^)
           if (sets[setName] !== undefined) {
-              results.push(complement(setUniverso, sets[setName])); // Calcula el complemento del conjunto
+              results.push(powerSet(sets[setName])); // Calcula el conjunto potencia
           } else {
               console.error(`El conjunto ${setName} no está definido.`);
           }
+      } else {
+          // Aquí verificamos si el conjunto está definido
+          if (sets[part] === undefined) {
+              console.error(`El conjunto ${part} no está definido.`);
+              continue; // Salir si el conjunto no está definido
+          }
+          results.push(sets[part]); // Añadir el conjunto
+      }
+  }
 
-        } else if (part.endsWith('^')) {
-            // Detectar el conjunto potencia A^
-            const setName = part.slice(0, -1); // Extrae el nombre del conjunto (antes del ^)
-            if (sets[setName] !== undefined) {
-                results.push(powerSet(sets[setName])); // Calcula el conjunto potencia
-            } else {
-                console.error(`El conjunto ${setName} no está definido.`);
-            }
-        } else {
-            // Aquí verificamos si el conjunto está definido
-            if (sets[part] === undefined) {
-                console.error(`El conjunto ${part} no está definido.`);
-                continue; // Salir si el conjunto no está definido
-            }
-            results.push(sets[part]); // Añadir el conjunto
-        }
-    }
+  console.log('Resultados acumulados:', results); // Muestra los resultados intermedios
+  console.log('Operadores acumulados:', operators); // Muestra los operadores capturados
 
-    // Realizar operaciones
-    return evaluateInnerOperations(results, operators);
+  // Realizar operaciones finales con los resultados
+  return evaluateInnerOperations(results, operators);
 };
+
+
 
 // Modificar la función de operaciones internas para manejar todas las operaciones
 const evaluateInnerOperations = (results, operators) => {
@@ -225,7 +241,7 @@ const evaluateInnerOperations = (results, operators) => {
       } else if (operator === '×') { // Producto cartesiano
           finalResult = cartesianProduct(finalResult, rightSet);
       } else if (operator.endsWith('^c')) { // Complemento
-          finalResult = complement(sets.universo, rightSet);
+          finalResult = complement([1,2,3,4,5], [1,2,3]);
       } else if (operator === '^') { // Potencia (calculando el conjunto de subconjuntos)
           finalResult = powerSet(finalResult);
       }
@@ -240,17 +256,18 @@ const evaluateInnerOperations = (results, operators) => {
   };
 
   const handleCalculate = () => {
-    const processedUniverso = processSet(universo);
-    const processedA = processSet(conjuntoA);
-    const processedB = processSet(conjuntoB);
-    const processedC = processSet(conjuntoC);
+    const processedUniverso = processSet(universo); // Procesa el conjunto universo
+    const processedA = processSet(conjuntoA);       // Procesa el conjunto A
+    const processedB = processSet(conjuntoB);       // Procesa el conjunto B
+    const processedC = processSet(conjuntoC);       // Procesa el conjunto C
 
+    // Actualiza el estado de sets
     setSets({
-      universo: processedUniverso,
-      A: processedA,
-      B: processedB,
-      C: processedC,
-      entrada: entrada
+        universo: processedUniverso,
+        A: processedA,
+        B: processedB,
+        C: processedC,
+        entrada: entrada
     });
 
     console.log("Valores capturados:");
@@ -262,15 +279,15 @@ const evaluateInnerOperations = (results, operators) => {
 
     // Llama a la función para evaluar la expresión de entrada
     if (entrada) {
-      const resultado = evaluateExpression(entrada);
-      setResults({
-        ab: resultado.join(", "),
-      })
-      console.log(`Resultado: ${JSON.stringify(resultado)}`);
+        const resultado = evaluateExpression(entrada);
+        setResults({
+            ab: resultado.join(", "),
+        });
+        console.log(`Resultado: ${JSON.stringify(resultado)}`);
     } else {
-      console.error("Entrada no válida.");
+        console.error("Entrada no válida.");
     }
-  };
+};
 
   //aqui la logica de sombrear los conjuntos
   const getColor = (set) => {
