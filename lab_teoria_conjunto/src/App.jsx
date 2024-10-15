@@ -56,10 +56,10 @@ export default function Component() {
   const [value, setValue] = useState("");
 
   // Estados iniciales para cada conjunto
-  const [universo, setUniverso] = useState([]);
-  const [conjuntoA, setConjuntoA] = useState([]);
-  const [conjuntoB, setConjuntoB] = useState([]);
-  const [conjuntoC, setConjuntoC] = useState([]);
+  const [universo, setUniverso] = useState("");
+  const [conjuntoA, setConjuntoA] = useState("");
+  const [conjuntoB, setConjuntoB] = useState("");
+  const [conjuntoC, setConjuntoC] = useState("");
   const [entrada, setEntrada] = useState("");
 
   const [resultAB, setResultAB] = useState([]);
@@ -157,11 +157,10 @@ const testComplementFunction = () => {
   });
 };
 
-
 const evaluateExpression = (expression) => {
   // Captura las partes de la expresión (conjuntos y operadores)
   const parts = expression.match(/(\([^\)]+\)|[^\s()]+)/g); // Captura los conjuntos y paréntesis
-    console.log('Partes capturadas:', parts); // Muestra el arreglo de partes
+  console.log('Partes capturadas:', parts); // Muestra el arreglo de partes
   
   // Almacena las partes desglosadas en un arreglo de resultados
   let results = [];
@@ -210,10 +209,23 @@ const evaluateExpression = (expression) => {
   console.log('Operadores acumulados:', operators); // Muestra los operadores capturados
 
   // Realizar operaciones finales con los resultados
-  return evaluateInnerOperations(results, operators);
+  let finalResult = results[0]; // Iniciar con el primer resultado (por si no hay operadores)
+
+  for (let j = 0; j < operators.length; j++) {
+      const operator = operators[j];
+      const nextResult = results[j + 1]; // El siguiente resultado para operar
+
+      if (operator === '∪') {
+          finalResult = union(finalResult, nextResult); // Asumir que tienes una función union
+      } else if (operator === '∩') {
+          finalResult = intersection(finalResult, nextResult); // Asumir que tienes una función intersection
+      }
+      // Agregar otras operaciones según sea necesario
+  }
+
+
+  return finalResult; // Retornar el resultado final
 };
-
-
 
 // Modificar la función de operaciones internas para manejar todas las operaciones
 const evaluateInnerOperations = (results, operators) => {
@@ -231,149 +243,293 @@ const evaluateInnerOperations = (results, operators) => {
         }
 
         if (operator === '∪') {
-          finalResult = union(finalResult, rightSet);
-      } else if (operator === '∩') {
-          finalResult = intersection(finalResult, rightSet);
-      } else if (operator === '-') {
-          finalResult = difference(finalResult, rightSet);
-      } else if (operator === 'Δ') { // Diferencia simétrica
-          finalResult = symmetricDifference(finalResult, rightSet);
-      } else if (operator === '×') { // Producto cartesiano
-          finalResult = cartesianProduct(finalResult, rightSet);
-      } else if (operator.endsWith('^c')) { // Complemento
-          finalResult = complement([1,2,3,4,5], [1,2,3]);
-      } else if (operator === '^') { // Potencia (calculando el conjunto de subconjuntos)
-          finalResult = powerSet(finalResult);
-      }
+            finalResult = union(finalResult, rightSet);
+        } else if (operator === '∩') {
+            finalResult = intersection(finalResult, rightSet);
+        } else if (operator === '-') {
+            finalResult = difference(finalResult, rightSet);
+        } else if (operator === 'Δ') { // Diferencia simétrica
+            finalResult = symmetricDifference(finalResult, rightSet);
+        } else if (operator === '×') { // Producto cartesiano
+            finalResult = cartesianProduct(finalResult, rightSet);
+        } else if (operator.endsWith('^c')) { // Complemento
+            finalResult = complement([1,2,3,4,5], [1,2,3]);
+        } else if (operator === '^') { // Potencia (calculando el conjunto de subconjuntos)
+            finalResult = powerSet(finalResult);
+        }
     }
 
     return finalResult; // Retornar el resultado final
 };
 
-  // Función para procesar un conjunto dado
-  const processSet = (setString) => {
-    return setString.split(",").map(item => item.trim()); // Separa por comas y elimina espacios en blanco
-  };
-
-  const handleCalculate = () => {
-    const processedUniverso = processSet(universo); // Procesa el conjunto universo
-    const processedA = processSet(conjuntoA);       // Procesa el conjunto A
-    const processedB = processSet(conjuntoB);       // Procesa el conjunto B
-    const processedC = processSet(conjuntoC);       // Procesa el conjunto C
-
-    // Actualiza el estado de sets
-    setSets({
-        universo: processedUniverso,
-        A: processedA,
-        B: processedB,
-        C: processedC,
-        entrada: entrada
-    });
-
-    console.log("Valores capturados:");
-    console.log("Universo:", processedUniverso);
-    console.log("Conjunto A:", processedA);
-    console.log("Conjunto B:", processedB);
-    console.log("Conjunto C:", processedC);
-    console.log("Entrada:", entrada);
-
-    // Llama a la función para evaluar la expresión de entrada
-    if (entrada) {
-        const resultado = evaluateExpression(entrada);
-        setResults({
-            ab: resultado.join(", "),
-        });
-        console.log(`Resultado: ${JSON.stringify(resultado)}`);
-    } else {
-        console.error("Entrada no válida.");
-    }
+const processSet = (setString) => {
+  return setString.split(",").map(item => item.trim()); // Separa por comas y elimina espacios en blanco
 };
 
-  //aqui la logica de sombrear los conjuntos
-  const getColor = (set) => {
-    switch (set) {
-      case 'A':
-        return 'rgba(255, 99, 132, 0.5)'; // Color para A
-      case 'B':
-        return 'rgba(54, 162, 235, 0.5)'; // Color para B
-      case 'C':
-        return 'rgba(75, 192, 192, 0.5)'; // Color para C
-      case 'A,B':
-        return 'rgba(255, 206, 86, 0.5)'; // Color para A ∩ B
-      case 'A,C':
-        return 'rgba(153, 102, 255, 0.5)'; // Color para A ∩ C
-      case 'B,C':
-        return 'rgba(255, 159, 64, 0.5)'; // Color para B ∩ C
-      case 'A,B,C':
-        return 'rgba(0, 0, 0, 0.5)'; // Color para A ∩ B ∩ C
-      default:
-        return 'rgba(200, 200, 200, 0.5)'; // Color predeterminado para otras combinaciones
-    }
+const handleCalculate = () => {
+  if (!universo || !conjuntoA || !conjuntoB || !conjuntoC) {
+      console.error("Uno o más conjuntos están vacíos.");
+      return;
+  }
+
+  const processedUniverso = processSet(universo); // Procesa el conjunto universo
+  const processedA = processSet(conjuntoA);       // Procesa el conjunto A
+  const processedB = processSet(conjuntoB);       // Procesa el conjunto B
+  const processedC = processSet(conjuntoC);       // Procesa el conjunto C
+
+  // Actualiza el estado de sets
+  setSets({
+      universo: processedUniverso,
+      A: processedA,
+      B: processedB,
+      C: processedC,
+      entrada: entrada
+  });
+
+  console.log("Valores capturados:");
+  console.log("Universo:", processedUniverso);
+  console.log("Conjunto A:", processedA);
+  console.log("Conjunto B:", processedB);
+  console.log("Conjunto C:", processedC);
+  console.log("Entrada:", entrada);
+
+// Llama a la función para evaluar la expresión de entrada
+if (entrada) {
+  const resultado = evaluateExpression(entrada);
+  const shadedAreas = getShadedAreas(entrada);
+console.log("Áreas sombreadas obtenidas:", shadedAreas);
+
+  // Actualiza los resultados
+  setResults({
+      ab: resultado.join(", "),
+  });
+
+  // Registro de los resultados y áreas sombreadas
+  console.log(`Entrada: ${entrada}`);
+  console.log(`Resultado de la evaluación: ${JSON.stringify(resultado)}`);
+  console.log(`Áreas sombreadas:`, shadedAreas);
+} else {
+  console.error("Entrada no válida.");
+}
+
+};
+const interpretInput = (input) => {
+  const inputString = String(input); // Asegúrate de que es una cadena
+  const results = [];
+  const operators = [];
+
+  // Procesamiento
+  if (inputString.includes('∪')) {
+      operators.push('Union');
+  }
+  if (inputString.includes('∩')) {
+      operators.push('Interseccion');
+  }
+
+  // Agrega conjuntos a los resultados
+  if (inputString.includes('A')) results.push('A');
+  if (inputString.includes('B')) results.push('B');
+  if (inputString.includes('C')) results.push('C');
+
+  return { results, operators };
+};
+
+const parseExpression = (expression) => {
+  console.log("Entrada a parseExpression:", expression); // Ver qué se recibe
+
+  if (typeof expression !== 'string') {
+      console.error('El argumento debe ser una cadena, pero se recibió:', expression);
+      return { results: [], operators: [] }; // Retornar valores por defecto si no es una cadena
+  }
+
+  const parts = expression.split(' ').filter(Boolean); // Separa por espacios y filtra vacíos
+  console.log("Partes separadas:", parts); // Ver qué partes se han separado
+
+  let results = [];
+  let operators = [];
+
+  parts.forEach(part => {
+      part = part.trim();
+
+      // Manejar conjuntos y operadores
+      if (['A', 'B', 'C', '∪', '∩'].includes(part)) {
+          if (part === '∪' || part === '∩') {
+              operators.push(part);
+          } else {
+              results.push(part);
+          }
+      }
+  });
+
+  return { results, operators };
+};
+
+
+const getShadedAreas = (expression) => {
+  const { results, operators } = parseExpression(entrada); // Asegúrate de usar 'expression' en lugar de 'entrada'
+  let shadedAreas = {};
+
+  const colors = {
+      'A': 'green',
+      'B': 'yellow',
+      'C': 'blue',
+      'Union': 'purple',
+      'Interseccion': 'orange',
+      'ab': 'gray',  // Color para la intersección de A y B
+      'bc': 'gray',   // Color para la intersección de B y C
+      'ca': 'gray',   // Color para la intersección de C y A
+      'abc': 'gray',  // Color para la intersección de A, B y C
   };
+
+  // Inicializar todas las áreas con "black" al principio
+  ['A', 'B', 'C', 'ab', 'bc', 'ca', 'abc', 'Union', 'Interseccion'].forEach(area => {
+      shadedAreas[area] = 'none';
+  });
+
+  console.log("Áreas sombreadas iniciales:", shadedAreas);
+
+  // Procesar las uniones (∪)
+  if (operators.includes('∪')) {
+      // Sombreamos todas las áreas que se incluyen en la unión
+      if (results.includes('A')) {
+          shadedAreas['A'] = colors['A']; // Sombrea A
+          console.log("Sombreando A:", shadedAreas['A']);
+      }
+      if (results.includes('B')) {
+          shadedAreas['B'] = colors['B']; // Sombrea B
+          console.log("Sombreando B:", shadedAreas['B']);
+      }
+      if (results.includes('C')) {
+          shadedAreas['C'] = colors['C']; // Sombrea C
+          console.log("Sombreando C:", shadedAreas['C']);
+      }
+
+      // Si hay una unión de múltiples conjuntos, asignar el color a la unión total
+      if (results.length > 1) {
+          shadedAreas['Union'] = colors['Union']; // Sombrea la unión total
+          console.log("Sombreando la unión total:", shadedAreas['Union']);
+      }
+  }
+
+  // Procesar las intersecciones (∩)
+  if (operators.includes('∩')) {
+      if (results.includes('A') && results.includes('B')) {
+          shadedAreas['ab'] = colors['ab']; // Sombrea A ∩ B
+          console.log("Sombreando A ∩ B:", shadedAreas['ab']);
+      }
+      if (results.includes('B') && results.includes('C')) {
+          shadedAreas['bc'] = colors['bc']; // Sombrea B ∩ C
+          console.log("Sombreando B ∩ C:", shadedAreas['bc']);
+      }
+      if (results.includes('C') && results.includes('A')) {
+          shadedAreas['ca'] = colors['ca']; // Sombrea C ∩ A
+          console.log("Sombreando C ∩ A:", shadedAreas['ca']);
+      }
+      if (results.includes('A') && results.includes('B') && results.includes('C')) {
+          shadedAreas['abc'] = colors['abc']; // Sombrea A ∩ B ∩ C
+          console.log("Sombreando A ∩ B ∩ C:", shadedAreas['abc']);
+      }
+  }
+
+  // Manejar el complemento
+  if (operators.includes('c')) { // Verificar si el complemento está presente
+      if (results.includes('A') || results.includes('B')) {
+          // Sombrear las áreas no incluidas en A ∪ B
+          shadedAreas['A'] = 'none';
+          shadedAreas['B'] = 'none';
+          shadedAreas['ab'] = 'none';
+          shadedAreas['Union'] = 'none'; // El complemento de la unión no se sombreará
+          console.log("Sombreando el complemento de A ∪ B:", shadedAreas);
+      }
+  }
+
+  // Asignar color 'black' a áreas no utilizadas
+  if (!results.includes('A')) shadedAreas['A'] = 'none';
+  if (!results.includes('B')) shadedAreas['B'] = 'none';
+  if (!results.includes('C')) shadedAreas['C'] = 'none';
+  if (!results.includes('A') && !results.includes('B')) shadedAreas['ab'] = 'none';
+  if (!results.includes('B') && !results.includes('C')) shadedAreas['bc'] = 'none';
+  if (!results.includes('C') && !results.includes('A')) shadedAreas['ca'] = 'none';
+  if (!results.includes('A') && !results.includes('B') && !results.includes('C')) shadedAreas['abc'] = 'none';
+
+  console.log("Áreas sombreadas finales:", shadedAreas);
+  return shadedAreas;
+};
+
+
+const ActualizarGrafica = (userInput) => {
+  // Interpretar la entrada del usuario para obtener resultados y operadores
+  const { results, operators } = interpretInput(entrada);
+
+  // Obtener las áreas sombreadas y sus colores
+  const shadedAreas = getShadedAreas(results, operators);
+
+  // Construir los datos para Highcharts basado en las áreas sombreadas
   const data = [
     {
-      sets: ['A'],
-      value: 3,
-      name: '1, 2, 3, 4, 5, 6',
-      color: getColor('A') // Asigna el color basado en la función
+        sets: ['A'],
+        value: 3,
+        name: conjuntoA,
+        color: shadedAreas['A']
     },
     {
-      sets: ['B'],
-      value: 3,
-      name: '2, 5, 7',
-      color: getColor('B')
+        sets: ['B'],
+        value: 3,
+        name: conjuntoB,
+        color: shadedAreas['B']
     },
     {
-      sets: ['C'],
-      value: 3,
-      name: '1, 3, 5, 7, 8',
-      color: getColor('C')
+        sets: ['C'],
+        value: 3,
+        name: conjuntoC,
+        color: shadedAreas['C']
     },
     {
-      sets: ['A', 'B'],
-      value: 1,
-      name: '2, 5',
-      color: getColor('A,B') // Asigna color para intersección A ∩ B
+        sets: ['A', 'B'],
+        value: 1,
+        name: '',
+        color: shadedAreas['ab'] || 'none' // Cambiado a 'ab'
     },
     {
-      sets: ['A', 'C'],
-      value: 1,
-      name: '5',
-      color: getColor('A,C')
+        sets: ['A', 'C'],
+        value: 1,
+        name: '',
+        color: shadedAreas['ca'] || 'none' // Cambiado a 'ca'
     },
     {
-      sets: ['B', 'C'],
-      value: 1,
-      name: '5, 7',
-      color: getColor('B,C')
+        sets: ['B', 'C'],
+        value: 1,
+        name: '',
+        color: shadedAreas['bc'] || 'none' // Cambiado a 'bc'
     },
     {
-      sets: ['A', 'B', 'C'],
-      value: 1,
-      name: '5',
-      color: getColor('A,B,C') // Color para A ∩ B ∩ C
+        sets: ['A', 'B', 'C'],
+        value: 1,
+        name: '',
+        color: shadedAreas['abc'] || 'none' // Cambiado a 'abc'
     }
-  ];
+];
 
-  useEffect(() => {
-    Highcharts.chart('container', {
+
+  // Crear el gráfico de Venn
+  Highcharts.chart('container', {
       chart: {
-        type: 'venn'
+          type: 'venn'
       },
       title: {
-        text: 'Intersección de tres conjuntos: A, B, C'
+          text: 'Conjunto Universo: '+ universo
       },
       series: [{
-        name: 'Intersección de A, B, C',
-        data: data.map(item => ({
-          sets: item.sets,
-          value: item.value,
-          name: item.name,
-          color: item.color // Asigna el color aquí
-        }))
+          name: '',
+          data: data.map(item => ({
+              sets: item.sets,
+              value: item.value,
+              name: item.name,
+              color: item.color // Asigna el color aquí
+          }))
       }]
-    });
-  }, []); // Solo se ejecuta una vez cuando el componente se monta
+  });
+};
 
 
   return (
@@ -453,6 +609,7 @@ const evaluateInnerOperations = (results, operators) => {
               <Input value={results.ca} readOnly placeholder="c a" />
               <Input value={results.abc} readOnly placeholder="a b c" />
             </div>
+            <button onClick={ActualizarGrafica}>Actualizar Grafica</button>
           </CardContent>
         </Card>
         <Card className="w-full md:w-2/3">
@@ -461,7 +618,6 @@ const evaluateInnerOperations = (results, operators) => {
               <figure className="highcharts-figure">
                 <div id="container" style={{ height: '400px' }}></div>
                 <p className="highcharts-description">
-                  Diagrama de Venn mostrando la intersección entre los conjuntos A, B y C.
                 </p>
               </figure>
             </div>
