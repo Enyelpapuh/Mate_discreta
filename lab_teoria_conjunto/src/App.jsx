@@ -17,21 +17,21 @@ import { Label } from "@/components/ui/label";
 import { Check, ChevronsUpDown } from "lucide-react"
 
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+ 
 
 const options = [
   { value: "Union", label: "∪" },
   { value: "Intercepcion", label: "∩" },
-  { value: "Complemento", label: "uncoming..." },
-  { value: "Diferencia", label: "−" },
-  { value: "Dif-simetrica", label: "△" },
-  { value: "Potencia", label: "uncoming.." },
-  { value: "Cartesiano", label: "X" },
+  { value: "Complemento", label: "^c" },
+  { value: "Diferencia", label: "-" },
+  { value: "Dif-simetrica", label: "Δ" },
+  { value: "Potencia", label: "^" },
+  { value: "Cartesiano", label: "×" },
 ]
 
 // Inicializa los módulos
@@ -40,6 +40,10 @@ HighchartsExporting(Highcharts);
 HighchartsAccessibility(Highcharts);
 
 export default function Component() {
+  const handleSymbolClick = (symbol) => {
+    setEntrada((prev) => prev + symbol);
+  };
+
   const [results, setResults] = useState({ ab: "", bc: "", ca: "", abc: "" });
   const [resultadoFinal, setResultadoFinal] = useState([]);
   const [sets, setSets] = useState({
@@ -160,72 +164,83 @@ const testComplementFunction = () => {
 const evaluateExpression = (expression) => {
   // Captura las partes de la expresión (conjuntos y operadores)
   const parts = expression.match(/(\([^\)]+\)|[^\s()]+)/g); // Captura los conjuntos y paréntesis
-  console.log('Partes capturadas:', parts); // Muestra el arreglo de partes
+  if (!parts) {
+    console.error('Expresión no válida o vacía.');
+    return null;
+  }
   
-  // Almacena las partes desglosadas en un arreglo de resultados
+  console.log('Partes capturadas:', parts); // Muestra el arreglo de partes
+
   let results = [];
   let operators = []; // Lista para almacenar operadores
 
   for (let i = 0; i < parts.length; i++) {
-      let part = parts[i].trim();
+    let part = parts[i].trim();
 
-      // Manejar expresiones dentro de paréntesis
-      if (part.startsWith('(') && part.endsWith(')')) {
-          const innerExpression = part.slice(1, -1); // Elimina los paréntesis
-          results.push(evaluateExpression(innerExpression)); // Evaluar expresión interna
-      } else if (part === '∪' || part === '∩' || part === '-' || part === 'Δ' || part === '×' || part === '^c') {
-          // Si es un operador, lo almacenamos para manejar más adelante
-          operators.push(part);
-          continue;
-      } else if (part.includes('^c')) {
-          // Detectar el complemento A^c
-          const setName = part.split('^c')[0]; // Separa el nombre del conjunto del operador ^c
-          if (sets[setName] !== undefined && sets.universo.length > 0) {
-              const result = complement(sets.universo, sets[setName]); // Calcula el complemento del conjunto
-              results.push(result);
-              console.log(`Complemento de ${setName}:`, result); // Imprimir el resultado del complemento
-          } else {
-              console.error(`El conjunto ${setName} no está definido o el universo está vacío.`);
-          }
-      } else if (part.endsWith('^')) {
-          // Detectar el conjunto potencia A^
-          const setName = part.slice(0, -1); // Extrae el nombre del conjunto (antes del ^)
-          if (sets[setName] !== undefined) {
-              results.push(powerSet(sets[setName])); // Calcula el conjunto potencia
-          } else {
-              console.error(`El conjunto ${setName} no está definido.`);
-          }
+    // Manejar expresiones dentro de paréntesis
+    if (part.startsWith('(') && part.endsWith(')')) {
+      const innerExpression = part.slice(1, -1); // Elimina los paréntesis
+      results.push(evaluateExpression(innerExpression)); // Evaluar expresión interna
+    } else if (['∪', '∩', '-', 'Δ', '×'].includes(part)) {
+      operators.push(part); // Almacenar operadores
+    } else if (part.includes('^c')) {
+      const setName = part.split('^c')[0]; // Separa el nombre del conjunto
+      if (sets[setName] !== undefined) {
+        const result = complement(sets.universo, sets[setName]); // Calcula el complemento
+        results.push(result);
       } else {
-          // Aquí verificamos si el conjunto está definido
-          if (sets[part] === undefined) {
-              console.error(`El conjunto ${part} no está definido.`);
-              continue; // Salir si el conjunto no está definido
-          }
-          results.push(sets[part]); // Añadir el conjunto
+        console.error(`El conjunto ${setName} no está definido.`);
       }
+    } else if (part.endsWith('^')) {
+      const setName = part.slice(0, -1); // Extrae el nombre del conjunto (antes del ^)
+      if (sets[setName] !== undefined) {
+        results.push(powerSet(sets[setName])); // Calcula el conjunto potencia
+      } else {
+        console.error(`El conjunto ${setName} no está definido.`);
+      }
+    } else {
+      if (sets[part] === undefined) {
+        console.error(`El conjunto ${part} no está definido.`);
+      } else {
+        results.push(sets[part]); // Añadir el conjunto
+      }
+    }
   }
 
-  console.log('Resultados acumulados:', results); // Muestra los resultados intermedios
-  console.log('Operadores acumulados:', operators); // Muestra los operadores capturados
+  console.log('Resultados acumulados:', results);
+  console.log('Operadores acumulados:', operators);
 
-  // Realizar operaciones finales con los resultados
-  let finalResult = results[0]; // Iniciar con el primer resultado (por si no hay operadores)
+  // Evaluación de los resultados finales
+  let finalResult = results[0];
 
   for (let j = 0; j < operators.length; j++) {
-      const operator = operators[j];
-      const nextResult = results[j + 1]; // El siguiente resultado para operar
+    const operator = operators[j];
+    const rightSet = results[j + 1]; // El siguiente resultado para operar
 
-      if (operator === '∪') {
-          finalResult = union(finalResult, nextResult); // Asumir que tienes una función union
-      } else if (operator === '∩') {
-          finalResult = intersection(finalResult, nextResult); // Asumir que tienes una función intersection
-      }
-      // Agregar otras operaciones según sea necesario
+    switch (operator) {
+      case '∪':
+        finalResult = union(finalResult, rightSet);
+        break;
+      case '∩':
+        finalResult = intersection(finalResult, rightSet);
+        break;
+      case '-':
+        finalResult = difference(finalResult, rightSet);
+        break;
+      case 'Δ':
+        finalResult = symmetricDifference(finalResult, rightSet);
+        break;
+      case '×':
+        finalResult = cartesianProduct(finalResult, rightSet);
+        break;
+      default:
+        console.error(`Operador desconocido: ${operator}`);
+    }
   }
-
 
   return finalResult; // Retornar el resultado final
 };
+
 
 // Modificar la función de operaciones internas para manejar todas las operaciones
 const evaluateInnerOperations = (results, operators) => {
@@ -338,8 +353,8 @@ const parseExpression = (expression) => {
   console.log("Entrada a parseExpression:", expression); // Ver qué se recibe
 
   if (typeof expression !== 'string') {
-      console.error('El argumento debe ser una cadena, pero se recibió:', expression);
-      return { results: [], operators: [] }; // Retornar valores por defecto si no es una cadena
+    console.error('El argumento debe ser una cadena, pero se recibió:', expression);
+    return { results: [], operators: [] }; // Retornar valores por defecto si no es una cadena
   }
 
   const parts = expression.split(' ').filter(Boolean); // Separa por espacios y filtra vacíos
@@ -349,101 +364,138 @@ const parseExpression = (expression) => {
   let operators = [];
 
   parts.forEach(part => {
-      part = part.trim();
+    part = part.trim();
 
-      // Manejar conjuntos y operadores
-      if (['A', 'B', 'C', '∪', '∩'].includes(part)) {
-          if (part === '∪' || part === '∩') {
-              operators.push(part);
-          } else {
-              results.push(part);
-          }
+    // Manejar conjuntos y operadores, incluyendo diferencia (-), diferencia simétrica (Δ) y complemento (^)
+    if (['A', 'B', 'C', '∪', '∩', '-', 'Δ', 'A^c', 'B^c', 'C^c'].includes(part)) {
+      if (['∪', '∩', '-', 'Δ', 'A^c', 'B^c', 'C^c'].includes(part)) {
+        operators.push(part); // Captura el operador
+      } else {
+        results.push(part); // Captura los conjuntos A, B, C
       }
+    }
   });
 
   return { results, operators };
 };
 
 
+
+
 const getShadedAreas = (expression) => {
-  const { results, operators } = parseExpression(entrada); // Asegúrate de usar 'expression' en lugar de 'entrada'
+  const { results, operators } = parseExpression(entrada); // Cambiado "entrada" a "expression"
+  console.log("Resultados:", results);
+  console.log("Operadores:", operators);
+  
   let shadedAreas = {};
 
   const colors = {
-      'A': 'green',
-      'B': 'yellow',
-      'C': 'blue',
-      'Union': 'purple',
-      'Interseccion': 'orange',
-      'ab': 'gray',  // Color para la intersección de A y B
-      'bc': 'gray',   // Color para la intersección de B y C
-      'ca': 'gray',   // Color para la intersección de C y A
-      'abc': 'gray',  // Color para la intersección de A, B y C
+    'universo':'white',
+    'A': 'green',
+    'B': 'yellow',
+    'C': 'blue',
+    'A^c': 'lightgray',  // Color para el complemento de A
+    'B^c': 'lightgray',  // Color para el complemento de B
+    'C^c': 'lightgray',  // Color para el complemento de C
+    'Union': 'purple',
+    'Interseccion': 'orange',
+    'ab': 'gray',  // Color para la intersección de A y B
+    'bc': 'gray',   // Color para la intersección de B y C
+    'ca': 'gray',   // Color para la intersección de C y A
+    'abc': 'gray',  // Color para la intersección de A, B y C
+    'symmetricDiff': 'white' // Color para simular que el área de la intersección no se sombrea
   };
 
-  // Inicializar todas las áreas con "black" al principio
-  ['A', 'B', 'C', 'ab', 'bc', 'ca', 'abc', 'Union', 'Interseccion'].forEach(area => {
-      shadedAreas[area] = 'none';
+  // Inicializar todas las áreas con "none" al principio
+  ['A', 'B', 'C', 'ab', 'bc', 'ca', 'abc','universo', 'Union', 'Interseccion'].forEach(area => {
+    shadedAreas[area] = 'none';
   });
-
-  console.log("Áreas sombreadas iniciales:", shadedAreas);
 
   // Procesar las uniones (∪)
   if (operators.includes('∪')) {
-      // Sombreamos todas las áreas que se incluyen en la unión
-      if (results.includes('A')) {
-          shadedAreas['A'] = colors['A']; // Sombrea A
-          console.log("Sombreando A:", shadedAreas['A']);
-      }
-      if (results.includes('B')) {
-          shadedAreas['B'] = colors['B']; // Sombrea B
-          console.log("Sombreando B:", shadedAreas['B']);
-      }
-      if (results.includes('C')) {
-          shadedAreas['C'] = colors['C']; // Sombrea C
-          console.log("Sombreando C:", shadedAreas['C']);
-      }
+    // Sombreamos todas las áreas que se incluyen en la unión
+    if (results.includes('A')) shadedAreas['A'] = colors['A'];
+    if (results.includes('B')) shadedAreas['B'] = colors['B'];
+    if (results.includes('C')) shadedAreas['C'] = colors['C'];
 
-      // Si hay una unión de múltiples conjuntos, asignar el color a la unión total
-      if (results.length > 1) {
-          shadedAreas['Union'] = colors['Union']; // Sombrea la unión total
-          console.log("Sombreando la unión total:", shadedAreas['Union']);
-      }
+    if (results.length > 1) {
+      shadedAreas['Union'] = colors['Union']; // Sombrea la unión total
+    }
   }
 
   // Procesar las intersecciones (∩)
   if (operators.includes('∩')) {
-      if (results.includes('A') && results.includes('B')) {
-          shadedAreas['ab'] = colors['ab']; // Sombrea A ∩ B
-          console.log("Sombreando A ∩ B:", shadedAreas['ab']);
-      }
-      if (results.includes('B') && results.includes('C')) {
-          shadedAreas['bc'] = colors['bc']; // Sombrea B ∩ C
-          console.log("Sombreando B ∩ C:", shadedAreas['bc']);
-      }
-      if (results.includes('C') && results.includes('A')) {
-          shadedAreas['ca'] = colors['ca']; // Sombrea C ∩ A
-          console.log("Sombreando C ∩ A:", shadedAreas['ca']);
-      }
-      if (results.includes('A') && results.includes('B') && results.includes('C')) {
-          shadedAreas['abc'] = colors['abc']; // Sombrea A ∩ B ∩ C
-          console.log("Sombreando A ∩ B ∩ C:", shadedAreas['abc']);
-      }
+    if (results.includes('A') && results.includes('B')) shadedAreas['ab'] = colors['ab'];
+    if (results.includes('B') && results.includes('C')) shadedAreas['bc'] = colors['bc'];
+    if (results.includes('C') && results.includes('A')) shadedAreas['ca'] = colors['ca'];
+    if (results.includes('A') && results.includes('B') && results.includes('C')) shadedAreas['abc'] = colors['abc'];
   }
 
-  // Manejar el complemento
-  if (operators.includes('c')) { // Verificar si el complemento está presente
-      if (results.includes('A') || results.includes('B')) {
-          // Sombrear las áreas no incluidas en A ∪ B
-          shadedAreas['A'] = 'none';
-          shadedAreas['B'] = 'none';
-          shadedAreas['ab'] = 'none';
-          shadedAreas['Union'] = 'none'; // El complemento de la unión no se sombreará
-          console.log("Sombreando el complemento de A ∪ B:", shadedAreas);
-      }
+  // Procesar la diferencia (A - B)
+  if (operators.includes('-')) {
+    if (results.includes('A') && results.includes('B')) {
+      // Sombreamos A - B (solo A, pero no la intersección A ∩ B)
+      shadedAreas['A'] = colors['A'];  // A se sombrea
+      shadedAreas['B'] = 'none'; // B se deja en blanco
+      shadedAreas['ab'] = 'none'; // La intersección también queda en blanco
+    }
+    if (results.includes('B') && results.includes('C')) {
+      // Sombreamos B - C (solo B, pero no la intersección B ∩ C)
+      shadedAreas['B'] = colors['B']; 
+      shadedAreas['C'] = 'none'; 
+      shadedAreas['bc'] = 'none'; 
+    }
+    if (results.includes('C') && results.includes('A')) {
+      // Sombreamos C - A (solo C, pero no la intersección C ∩ A)
+      shadedAreas['C'] = colors['C'];
+      shadedAreas['A'] = 'none';
+      shadedAreas['ca'] = 'none';
+    }
   }
 
-  // Asignar color 'black' a áreas no utilizadas
+  // Procesar la diferencia simétrica (Δ)
+  if (operators.includes('Δ')) {
+    if (results.includes('A') && results.includes('B')) {
+      // Sombreamos A Δ B (todo menos la intersección A ∩ B)
+      shadedAreas['A'] = colors['A'];
+      shadedAreas['B'] = colors['B'];
+      shadedAreas['ab'] = colors['symmetricDiff']; // La intersección es blanca
+    }
+    if (results.includes('B') && results.includes('C')) {
+      // Sombreamos B Δ C (todo menos la intersección B ∩ C)
+      shadedAreas['B'] = colors['B'];
+      shadedAreas['C'] = colors['C'];
+      shadedAreas['bc'] = colors['symmetricDiff'];
+    }
+    if (results.includes('C') && results.includes('A')) {
+      // Sombreamos C Δ A (todo menos la intersección C ∩ A)
+      shadedAreas['C'] = colors['C'];
+      shadedAreas['A'] = colors['A'];
+      shadedAreas['ca'] = colors['symmetricDiff'];
+    }
+  }
+
+  // Procesar el complemento (^c)
+  results.forEach(result => {
+    if (result === 'A^c') {
+      shadedAreas['A'] = 'none'; // A se deja en blanco
+      shadedAreas['B'] = colors['B']; // Sombreamos todo lo demás
+      shadedAreas['C'] = colors['C'];
+      shadedAreas['universo'] = colors['universo'];
+    } else if (result === 'B^c') {
+      shadedAreas['A'] = colors['A']; // Sombreamos todo lo demás
+      shadedAreas['B'] = 'none'; // B se deja en blanco
+      shadedAreas['C'] = colors['C'];
+      shadedAreas['universo'] = colors['universo'];
+    } else if (result === 'C^c') {
+      shadedAreas['A'] = colors['A']; // Sombreamos todo lo demás
+      shadedAreas['B'] = colors['B'];
+      shadedAreas['C'] = 'none'; // C se deja en blanco
+      shadedAreas['universo'] = colors['universo'];
+    }
+  });
+
+  // Asegurarse de que las áreas no utilizadas tengan 'none'
   if (!results.includes('A')) shadedAreas['A'] = 'none';
   if (!results.includes('B')) shadedAreas['B'] = 'none';
   if (!results.includes('C')) shadedAreas['C'] = 'none';
@@ -452,9 +504,11 @@ const getShadedAreas = (expression) => {
   if (!results.includes('C') && !results.includes('A')) shadedAreas['ca'] = 'none';
   if (!results.includes('A') && !results.includes('B') && !results.includes('C')) shadedAreas['abc'] = 'none';
 
-  console.log("Áreas sombreadas finales:", shadedAreas);
   return shadedAreas;
 };
+
+
+
 
 
 const ActualizarGrafica = (userInput) => {
@@ -514,7 +568,8 @@ const ActualizarGrafica = (userInput) => {
   // Crear el gráfico de Venn
   Highcharts.chart('container', {
       chart: {
-          type: 'venn'
+          type: 'venn',
+          backgroundColor:  shadedAreas['universo'] || 'gray'
       },
       title: {
           text: 'Conjunto Universo: '+ universo
@@ -596,10 +651,28 @@ const ActualizarGrafica = (userInput) => {
                 onChange={(e) => setEntrada(e.target.value)}
                 placeholder="Expresión para evaluar"
               />
+{/* Renderizar botones para cada opción de simbología */}
+<TooltipProvider>
+      <div>
+        {/* Renderizar botones para cada opción de simbología */}
+        {options.map((option) => (
+          <Tooltip key={option.value}>
+            <TooltipTrigger asChild>
+              <Button onClick={() => handleSymbolClick(option.label)}>
+                {option.label}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{option.tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
             </div>
 
             {/* Botón para calcular */}
-            <button onClick={handleCalculate}>Calcular</button>
+            <Button onClick={handleCalculate}>Calcular</Button>
 
             {/*----************************************************************------------------- Resultados */}
             <div className="space-y-2">
@@ -609,7 +682,7 @@ const ActualizarGrafica = (userInput) => {
               <Input value={results.ca} readOnly placeholder="c a" />
               <Input value={results.abc} readOnly placeholder="a b c" />
             </div>
-            <button onClick={ActualizarGrafica}>Actualizar Grafica</button>
+            <Button onClick={ActualizarGrafica}>Actualizar Grafica</Button>
           </CardContent>
         </Card>
         <Card className="w-full md:w-2/3">
