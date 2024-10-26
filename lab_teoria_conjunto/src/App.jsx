@@ -26,7 +26,7 @@ import {
 
 const options = [
   { value: "Union", label: "∪" },
-  { value: "Intercepcion", label: "∩" },
+  { value: "Interseccion", label: "∩" },
   { value: "Complemento", label: "^c" },
   { value: "Diferencia", label: "-" },
   { value: "Dif-simetrica", label: "Δ" },
@@ -653,7 +653,7 @@ const ActualizarGrafica = (userInput) => {
               />
 {/* Renderizar botones para cada opción de simbología */}
 <TooltipProvider>
-      <div>
+      <div className="p-4">
         {/* Renderizar botones para cada opción de simbología */}
         {options.map((option) => (
           <Tooltip key={option.value}>
@@ -663,7 +663,7 @@ const ActualizarGrafica = (userInput) => {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{option.tooltip}</p>
+              <p>{option.value}</p>
             </TooltipContent>
           </Tooltip>
         ))}
@@ -678,9 +678,7 @@ const ActualizarGrafica = (userInput) => {
             <div className="space-y-2">
               <Label>Resultados</Label>
               <Input value={results.ab} readOnly placeholder="a b" />
-              <Input value={results.bc} readOnly placeholder="b c" />
-              <Input value={results.ca} readOnly placeholder="c a" />
-              <Input value={results.abc} readOnly placeholder="a b c" />
+              
             </div>
             <Button onClick={ActualizarGrafica}>Actualizar Grafica</Button>
           </CardContent>
