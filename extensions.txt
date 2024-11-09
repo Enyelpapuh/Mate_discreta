@@ -97,3 +97,5 @@ code --install-extension xdebug.php-debug
 code --install-extension xdebug.php-pack
 code --install-extension yoavbls.pretty-ts-errors
 code --install-extension zobo.php-intellisense
+
+homelo chino
