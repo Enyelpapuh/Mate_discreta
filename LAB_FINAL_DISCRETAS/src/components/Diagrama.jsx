@@ -27,15 +27,15 @@ const AutomataDiagram = () => {
 
     // Datos para las transiciones del autómata
     const links = [
-      { source: "q0", target: "q0", label: "0", curved: true },
+      { source: "q0", target: "q0", label: "0", curved: true, xOffset: 55, yOffset: -36 },
       { source: "q0", target: "q1", label: "1" },
       { source: "q1", target: "q2", label: "0" },
-      { source: "q1", target: "q1", label: "1", curved: true  },
+      { source: "q1", target: "q1", label: "1", curved: true, xOffset: 55, yOffset: -36},
       { source: "q2", target: "q0", label: "0" },
-      { source: "q2", target: "q3", label: "1", curved: true  },
-      { source: "q3", target: "q2", label: "0", curved: true  },
+      { source: "q2", target: "q3", label: "1", curved: true, xOffset: -15, yOffset: -20 },
+      { source: "q3", target: "q2", label: "0", curved: true, xOffset: 30, yOffset: 45 },
       { source: "q3", target: "q4", label: "1" },
-      { source: "q4", target: "q0", label: "0" },
+      { source: "q4", target: "q0", label: "0", yOffset: -20 },
       { source: "q4", target: "q0", label: "1" }
     ];
 
@@ -54,27 +54,34 @@ const AutomataDiagram = () => {
 
     // Función para crear un arco entre dos puntos
     const createArcPath = (source, target, curved) => {
-        const dx = target.x - source.x;
-        const dy = target.y - source.y;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const angle = Math.atan2(dy, dx); // Calcula el ángulo de la línea
+      const offsetX = Math.cos(angle) * 30; // Ajuste para el radio del nodo (30 es el radio del nodo)
+      const offsetY = Math.sin(angle) * 30;
+
+      // Coordenadas ajustadas del punto final
+      const adjustedTargetX = target.x - offsetX;
+      const adjustedTargetY = target.y - offsetY;
+
+      // Si es curvado, crea una curva
+      if (curved) {
         const dr = Math.sqrt(dx * dx + dy * dy);
+        return `M ${source.x},${source.y} A ${dr},${dr} 0 0,1 ${adjustedTargetX},${adjustedTargetY}`;
+      }
 
-        // Si es curvado, crea una curva
-        if (curved) {
-          return `M ${source.x},${source.y} A ${dr},${dr} 0 0,1 ${target.x},${target.y}`;
-        }
-
-        // Si no es curvado, dibuja una línea recta
-        return `M ${source.x},${source.y} L ${target.x},${target.y}`;
-      };
+      // Si no es curvado, dibuja una línea recta
+      return `M ${source.x},${source.y} L ${adjustedTargetX},${adjustedTargetY}`;
+    };
 
     // Función para crear un auto-bucle
     const createSelfLoopPath = (node) => {
-        const x = node.x;
-        const y = node.y;
-        const radius = 40; // Tamaño del auto-bucle
+      const x = node.x;
+      const y = node.y;
+      const radius = 100; // Tamaño del auto-bucle
 
-        return `M ${x},${y - 30} C ${x + radius},${y - radius} ${x + radius},${y + radius} ${x},${y + 30}`;
-      };
+      return `M ${x},${y - 30} C ${x + radius},${y - radius} ${x + radius},${y + radius} ${x},${y + 30}`;
+    };
 
     // Crea enlaces/transiciones con la función de arco para las líneas curvadas
     svg.selectAll("path.link")
@@ -96,25 +103,44 @@ const AutomataDiagram = () => {
       .attr("stroke-width", 1.5)
       .attr("marker-end", "url(#arrow)"); // Flecha al final de la línea
 
-    // Crea etiquetas para las transiciones
-    svg.selectAll("text.link-label")
-      .data(links)
-      .enter()
-      .append("text")
-      .attr("x", d => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        const targetNode = nodes.find(n => n.id === d.target);
-        return (sourceNode.x + targetNode.x) / 2;
-      })
-      .attr("y", d => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        const targetNode = nodes.find(n => n.id === d.target);
-        return (sourceNode.y + targetNode.y) / 2 - 10;
-      })
-      .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("fill", "black")
-      .text(d => d.label);
+// Crea etiquetas para las transiciones
+svg.selectAll("text.link-label")
+  .data(links)
+  .enter()
+  .append("text")
+  .attr("x", d => {
+    const sourceNode = nodes.find(n => n.id === d.source);
+    const targetNode = nodes.find(n => n.id === d.target);
+    
+    // Posición base
+    let xPos = (sourceNode.x + targetNode.x) / 2;
+    
+    // Si existe un ajuste personalizado en x, aplícalo
+    if (d.xOffset !== undefined) {
+      xPos += d.xOffset;
+    }
+    
+    return xPos;
+  })
+  .attr("y", d => {
+    const sourceNode = nodes.find(n => n.id === d.source);
+    const targetNode = nodes.find(n => n.id === d.target);
+    
+    // Posición base
+    let yPos = (sourceNode.y + targetNode.y) / 2 - 10;
+    
+    // Si existe un ajuste personalizado en y, aplícalo
+    if (d.yOffset !== undefined) {
+      yPos += d.yOffset;
+    }
+    
+    return yPos;
+  })
+  .attr("text-anchor", "middle")
+  .attr("font-size", "px")
+  .attr("fill", "black")
+  .text(d => d.label);
+
 
     // Crea nodos
     const nodeGroup = svg.selectAll("g.node")

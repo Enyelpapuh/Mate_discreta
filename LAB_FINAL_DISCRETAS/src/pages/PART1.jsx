@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import AutomataDiagram from "@/components/Diagrama";
 import { Link } from 'react-router-dom';
 
-export default function Component() {
+export default function PART1() {
   const [input, setInput] = useState("");
   const [results, setResults] = useState({ states: [], occurrences: 0 });
 
@@ -54,12 +54,12 @@ export default function Component() {
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6 bg-blue-50 min-h-screen">
-              <div className="absolute top-4 left-4 gap-4 flex">
+      <div className="absolute top-4 left-4 gap-4 flex">
         <Link to="/">
           <Button variant="secondary">Homepage</Button>
         </Link>
-        <Link to="/parishioners">
-          <Button variant="secondary">Formulario de feligreses</Button>
+        <Link to="/PART2">
+          <Button variant="secondary">Parte 2</Button>
         </Link>
       </div>
       <Card className="w-full md:w-1/3">
