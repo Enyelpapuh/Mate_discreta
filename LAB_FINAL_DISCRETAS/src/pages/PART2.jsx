@@ -51,10 +51,12 @@ export default function PART2() {
     <div className="flex flex-col md:flex-row gap-6 p-6 bg-blue-50 min-h-screen">
             <div className="absolute top-4 left-4 gap-4 flex">
         <Link to="/">
-          <Button variant="secondary">Homepage</Button>
+          <Button variant="secondary" 
+          className="w-full h-12 bg-gray-700 hover:bg-gray-600 border-2 border-black text-white font-semibold text-lg">Homepage</Button>
         </Link>
         <Link to="/PART1">
-          <Button variant="secondary">Parte 2</Button>
+          <Button variant="secondary" 
+          className="w-full h-12 bg-gray-700 hover:bg-gray-600 border-2 border-black text-white font-semibold text-lg">Parte 1</Button>
         </Link>
       </div>
       <Card className="w-full md:w-1/3">
