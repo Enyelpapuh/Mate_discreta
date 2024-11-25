@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import * as d3 from "d3";
 
-const AutomataDiagram = () => {
+const AutomataDiagram = ({ visitedStates }) => {
   useEffect(() => {
     // Limpia el contenido previo del contenedor
     d3.select("#automata-graph").selectAll("*").remove();
@@ -168,8 +168,23 @@ svg.selectAll("text.link-label")
       .attr("dy", 5)
       .attr("font-size", "12px")
       .text(d => d.label);
+    
+        // Función para resaltar un nodo
+        const highlightNode = (stateId) => {
+          nodeGroup.selectAll("circle")
+            .attr("fill", d => d.id === stateId ? "lightgreen" : "lightyellow");
+        };
+    
+    // Resalta los estados visitados paso a paso
+    if (visitedStates && visitedStates.length > 0) {
+      visitedStates.forEach((state, index) => {
+        setTimeout(() => {
+          highlightNode(state);
+        }, index * 1000); // Espera 1 segundo antes de resaltar el siguiente
+      });
+    }
 
-  }, []);
+  }, [visitedStates]);
 
   return (
     <div id="automata-graph" className="w-full h-full"></div>

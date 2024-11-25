@@ -94,7 +94,7 @@ export default function PART1() {
       </Card>
       <Card className="w-full md:w-2/3">
         <CardContent className="h-full min-h-[400px] flex items-center justify-center text-muted-foreground">
-          <AutomataDiagram />
+        <AutomataDiagram visitedStates={results.states} />
         </CardContent>
       </Card>
     </div>

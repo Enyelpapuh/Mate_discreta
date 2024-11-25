@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import * as d3 from "d3";
 
-const AutomataDiagram2 = () => {
+const AutomataDiagram2 = ({ visitedStates }) => {
   useEffect(() => {
     // Limpia el contenido previo del contenedor
     d3.select("#automata-graph").selectAll("*").remove();
@@ -18,20 +18,20 @@ const AutomataDiagram2 = () => {
 
     // Datos para los nodos del autómata
     const nodes = [
-      { id: "q0", x: 200, y: 160, label: "q0", initial: true,final: true },
+      { id: "q0", x: 200, y: 160, label: "q0", initial: true, final: true },
       { id: "q1", x: 130, y: 540, label: "q1" },
       { id: "q2", x: 390, y: 520, label: "q2" },
     ];
 
-   // Datos para las transiciones del autómata
-const links = [
-  { source: "q0", target: "q0", label: "0", curved: true }, // q0 -> q0 con 0
-  { source: "q0", target: "q1", label: "1", curved: true  },              // q0 -> q1 con 1
-  { source: "q1", target: "q2", label: "0", curved: true  },              // q1 -> q2 con 0
-  { source: "q1", target: "q0", label: "1", curved: true  },              // q1 -> q0 con 1
-  { source: "q2", target: "q1", label: "0", curved: true  },              // q2 -> q1 con 0
-  { source: "q2", target: "q2", label: "1", curved: true  },              // q2 -> q2 con 1
-];
+    // Datos para las transiciones del autómata
+    const links = [
+      { source: "q0", target: "q0", label: "0", curved: true },
+      { source: "q0", target: "q1", label: "1", curved: true },
+      { source: "q1", target: "q2", label: "0", curved: true },
+      { source: "q1", target: "q0", label: "1", curved: true },
+      { source: "q2", target: "q1", label: "0", curved: true },
+      { source: "q2", target: "q2", label: "1", curved: true },
+    ];
 
     // Define la flecha para las transiciones
     svg.append("defs").append("marker")
@@ -48,27 +48,25 @@ const links = [
 
     // Función para crear un arco entre dos puntos
     const createArcPath = (source, target, curved) => {
-        const dx = target.x - source.x;
-        const dy = target.y - source.y;
-        const dr = Math.sqrt(dx * dx + dy * dy);
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const dr = Math.sqrt(dx * dx + dy * dy);
 
-        // Si es curvado, crea una curva
-        if (curved) {
-          return `M ${source.x},${source.y} A ${dr},${dr} 0 0,1 ${target.x},${target.y}`;
-        }
+      if (curved) {
+        return `M ${source.x},${source.y} A ${dr},${dr} 0 0,1 ${target.x},${target.y}`;
+      }
 
-        // Si no es curvado, dibuja una línea recta
-        return `M ${source.x},${source.y} L ${target.x},${target.y}`;
-      };
+      return `M ${source.x},${source.y} L ${target.x},${target.y}`;
+    };
 
     // Función para crear un auto-bucle
     const createSelfLoopPath = (node) => {
-        const x = node.x;
-        const y = node.y;
-        const radius = 40; // Tamaño del auto-bucle
+      const x = node.x;
+      const y = node.y;
+      const radius = 40;
 
-        return `M ${x},${y - 30} C ${x + radius},${y - radius} ${x + radius},${y + radius} ${x},${y + 30}`;
-      };
+      return `M ${x},${y - 30} C ${x + radius},${y - radius} ${x + radius},${y + radius} ${x},${y + 30}`;
+    };
 
     // Crea enlaces/transiciones con la función de arco para las líneas curvadas
     svg.selectAll("path.link")
@@ -79,7 +77,6 @@ const links = [
         const sourceNode = nodes.find(n => n.id === d.source);
         const targetNode = nodes.find(n => n.id === d.target);
 
-        // Si la transición es a sí misma (self-loop), usa la función createSelfLoopPath
         if (d.source === d.target) {
           return createSelfLoopPath(sourceNode);
         }
@@ -88,7 +85,7 @@ const links = [
       .attr("fill", "none")
       .attr("stroke", "black")
       .attr("stroke-width", 1.5)
-      .attr("marker-end", "url(#arrow)"); // Flecha al final de la línea
+      .attr("marker-end", "url(#arrow)");
 
     // Crea etiquetas para las transiciones
     svg.selectAll("text.link-label")
@@ -115,14 +112,15 @@ const links = [
       .data(nodes)
       .enter()
       .append("g")
+      .attr("class", "node")
       .attr("transform", d => `translate(${d.x},${d.y})`);
 
     // Crea círculos para los nodos
-    nodeGroup.append("circle")
+    const circles = nodeGroup.append("circle")
       .attr("r", 30)
       .attr("fill", "lightyellow")
       .attr("stroke", "black")
-      .attr("stroke-width", d => d.final ? 3 : 1.5); // Doble borde para estado final
+      .attr("stroke-width", d => d.final ? 3 : 1.5);
 
     // Crea etiqueta para el estado inicial
     nodeGroup.filter(d => d.initial)
@@ -137,11 +135,24 @@ const links = [
       .attr("font-size", "12px")
       .text(d => d.label);
 
-  }, []);
+    // Función para resaltar un nodo
+    const highlightNode = (stateId) => {
+      nodeGroup.selectAll("circle")
+        .attr("fill", d => d.id === stateId ? "lightgreen" : "lightyellow");
+    };
 
-  return (
-    <div id="automata-graph" className="w-full h-full"></div>
-  );
+    // Resalta los estados visitados paso a paso
+    if (visitedStates && visitedStates.length > 0) {
+      visitedStates.forEach((state, index) => {
+        setTimeout(() => {
+          highlightNode(state);
+        }, index * 1000); // Espera 1 segundo antes de resaltar el siguiente
+      });
+    }
+
+  }, [visitedStates]);
+
+  return <div id="automata-graph"></div>;
 };
 
 export default AutomataDiagram2;
