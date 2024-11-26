@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from 'react-router-dom';
 import AutomataDiagram2 from "@/components/Diagrama2";
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead, TableCaption } from "@/components/ui/table";
+
 
 export default function PART2() {
   const [input, setInput] = useState("");
@@ -18,7 +20,11 @@ export default function PART2() {
     q1: { "0": "q2", "1": "q0" },
     q2: { "0": "q1", "1": "q2" },
   };
-
+  const statesData = [
+    { state: "q0 (Incial)", onZero: "q0", onOne: "q1" },
+    { state: "q1", onZero: "q2", onOne: "q0" },
+    { state: "q2 (Final)", onZero: "q1", onOne: "q2" },
+  ];
   const finalState = "q0"; // Estado final del autómata (múltiplo de 3)
 
   // Lógica para simular el autómata
@@ -88,6 +94,25 @@ export default function PART2() {
               </p>
             </div>
           </div>
+          <Table>
+    <TableCaption>Tabla de Transiciones del Autómata</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Estado</TableHead>
+        <TableHead>0</TableHead>
+        <TableHead>1</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {statesData.map((state) => (
+        <TableRow key={state.state}>
+          <TableCell>{state.state}</TableCell>
+          <TableCell>{state.onZero}</TableCell>
+          <TableCell>{state.onOne}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
         </CardContent>
       </Card>
       <Card className="w-full md:w-2/3">

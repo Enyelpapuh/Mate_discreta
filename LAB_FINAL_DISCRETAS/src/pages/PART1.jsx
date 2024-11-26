@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AutomataDiagram from "@/components/Diagrama";
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead, TableCaption } from "@/components/ui/table";
+
 import { Link } from 'react-router-dom';
 
 export default function PART1() {
@@ -20,6 +22,13 @@ export default function PART1() {
     q3: { "0": "q2", "1": "q4" },
     q4: { "0": "q0", "1": "q0" }, // Estado final
   };
+  const statesData = [
+    { state: "q0 (Inicial)", onZero: "q0", onOne: "q1" },
+    { state: "q1", onZero: "q2", onOne: "q1" },
+    { state: "q2", onZero: "q0", onOne: "q3" },
+    { state: "q3", onZero: "q2", onOne: "q4" },
+    { state: "q4 (Final)", onZero: "q0", onOne: "q0" },
+  ];
 
   const finalState = "q4"; // Estado final del autómata
 
@@ -93,13 +102,34 @@ export default function PART1() {
               </p>
             </div>
           </div>
+            <Table>
+    <TableCaption>Tabla de Transiciones del Autómata</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Estado</TableHead>
+        <TableHead>0</TableHead>
+        <TableHead>1</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {statesData.map((state) => (
+        <TableRow key={state.state}>
+          <TableCell>{state.state}</TableCell>
+          <TableCell>{state.onZero}</TableCell>
+          <TableCell>{state.onOne}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
         </CardContent>
       </Card>
+      
       <Card className="w-full md:w-2/3">
         <CardContent className="h-full min-h-[400px] flex items-center justify-center text-muted-foreground">
         <AutomataDiagram visitedStates={results.states} />
         </CardContent>
       </Card>
+
     </div>
   );
 }
